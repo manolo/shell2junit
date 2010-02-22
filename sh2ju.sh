@@ -25,7 +25,7 @@ asserts=00; errors=0; total=0; content=""
 
 # create output folder
 juDIR=`pwd`/results
-mkdir -p $juDIR || exit
+mkdir -p "$juDIR" || exit
 
 # The name of the suite is calculated based in your script name
 suite=`basename $0 | sed -e 's/.sh$//' | tr "." "_"`
@@ -40,7 +40,7 @@ eVal() {
 # Method to clean old tests
 juLogClean() {
   echo "+++ Removing old junit reports from: $juDIR "
-  rm -f $juDIR/TEST-*	
+  rm -f "$juDIR"/TEST-*
 }
 
 # Execute a command and record its results 
@@ -120,7 +120,7 @@ $out
     </testcase>
   "
   ## testsuite block
-  cat <<EOF >$juDIR/TEST-$suite.xml
+  cat <<EOF > "$juDIR/TEST-$suite.xml"
   <testsuite failures="0" assertions="$assertions" name="$suite" tests="1" errors="$errors" time="$total">
     $content
   </testsuite>
