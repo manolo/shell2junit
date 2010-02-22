@@ -12,6 +12,9 @@ juLog  -name=myTrueCommand                  true
 #### Failure
 juLog  -name=myFalseCommand                 false
 
+#### Sleep
+juLog  -name=mySleepCommand                 sleep 5
+
 #### The test fails because the word 'world' is found in command output
 juLog  -name=myErrorCommand -ierror=world   echo Hello World
 
