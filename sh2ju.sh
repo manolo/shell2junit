@@ -22,6 +22,7 @@
 ###
 
 asserts=00; errors=0; total=0; content=""
+date=`which gdate || which date`
 
 # create output folder
 juDIR=`pwd`/results
@@ -79,11 +80,11 @@ juLog() {
   echo "+++ Running case: $name " | tee -a $outf
   echo "+++ working dir: "`pwd`           | tee -a $outf
   echo "+++ command: $cmd"            | tee -a $outf
-  ini=`date +%s`
+  ini=`$date +%s.%N`
   eVal "$cmd" 2>&1                | tee -a $outf
   evErr=`cat $errfile`
   rm -f $errfile
-  end=`date +%s`
+  end=`date +%s.%N`
   echo "+++ exit code: $evErr"        | tee -a $outf
   
   # set the appropriate error, based in the exit code and the regex  
@@ -100,8 +101,8 @@ juLog() {
   asserts=`expr $asserts + 1`
   asserts=`printf "%.2d" $asserts`
   errors=`expr $errors + $err`
-  time=`expr $end - $ini`
-  total=`expr $total + $time`
+  time=`echo "$end - $ini" | bc -l`
+  total=`echo "$total + $time" | bc -l`
 
   # write the junit xml report
   ## failure tag
