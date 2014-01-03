@@ -7,7 +7,7 @@
 
 ###
 ### A library for shell scripts which creates reports in jUnit format.
-### These reports can be used in Hudson, or any other CI.
+### These reports can be used in Jenkins, or any other CI.
 ###
 ### Usage: 
 ###     - Include this file in your shell script
@@ -18,7 +18,7 @@
 ###             -error="RegExp"  : a regexp which sets the test as failure when the output matches it
 ###             -ierror="RegExp" : same as -error but case insensitive
 ###     - Junit reports are left in the folder 'result' under the directory where the script is executed.
-###     - Configure hudson to parse junit files from the generated folder
+###     - Configure Jenkins to parse junit files from the generated folder
 ###
 
 asserts=00; errors=0; total=0; content=""

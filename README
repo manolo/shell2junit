@@ -1,5 +1,5 @@
 - Shell2junit is a simple utility which facilitates to generate junit reports for batch processes executed in shell scripts.
-- The reports can be easily parsed in Hudson and other CI software in order to monitor and generate trends and alerts.
-- This page[1] teaches how to do it in Jenkins (aka Hudson)
+- The reports can be easily parsed in Jenkins and other CI software in order to monitor and generate trends and alerts.
+- This page[1] teaches how to do it in Jenkins.
 
 [1] http://manolocarrasco.blogspot.com/2010/02/hudson-publish-bach.html
