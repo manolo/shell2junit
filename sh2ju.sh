@@ -35,7 +35,8 @@ suite=`basename $0 | sed -e 's/.sh$//' | tr "." "_"`
 errfile=/tmp/evErr.$$.log
 eVal() {
   eval "$1"
-  echo $? | tr -d "\n" >$errfile
+  # stdout and stderr may currently be inverted (see below) so echo may write to stderr
+  echo $? 2>&1 | tr -d "\n" > $errfile
 }
 
 # Method to clean old tests
@@ -75,19 +76,22 @@ juLog() {
 
   # eval the command sending output to a file
   outf=/var/tmp/ju$$.txt
+  errf=/var/tmp/ju$$-err.txt
   >$outf
   echo ""                         | tee -a $outf
   echo "+++ Running case: $name " | tee -a $outf
   echo "+++ working dir: "`pwd`           | tee -a $outf
   echo "+++ command: $cmd"            | tee -a $outf
   ini=`$date +%s.%N`
-  eVal "$cmd" 2>&1                | tee -a $outf
+  # execute the command, temporarily swapping stderr and stdout so they can be tee'd to separate files,
+  # then swapping them back again so that the streams are written correctly for the invoking process
+  ((eVal "$cmd" | tee -a $outf) 3>&1 1>&2 2>&3 | tee $errf) 3>&1 1>&2 2>&3
   evErr=`cat $errfile`
   rm -f $errfile
   end=`date +%s.%N`
   echo "+++ exit code: $evErr"        | tee -a $outf
-  
-  # set the appropriate error, based in the exit code and the regex  
+
+  # set the appropriate error, based in the exit code and the regex
   [ $evErr != 0 ] && err=1 || err=0
   out=`cat $outf | sed -e 's/^\([^+]\)/| \1/g'`
   if [ $err = 0 -a -n "$ereg" ]; then
@@ -97,6 +101,8 @@ juLog() {
   echo "+++ error: $err"         | tee -a $outf
   rm -f $outf
 
+  errMsg=`cat $errf`
+  rm -f $errf
   # calculate vars
   asserts=`expr $asserts + 1`
   asserts=`printf "%.2d" $asserts`
@@ -107,7 +113,7 @@ juLog() {
   # write the junit xml report
   ## failure tag
   [ $err = 0 ] && failure="" || failure="
-      <failure type=\"ScriptError\" message=\"Script Error\"></failure>
+      <failure type=\"ScriptError\" message=\"Script Error\"><![CDATA[$errMsg]]></failure>
   "
   ## testcase tag
   content="$content
@@ -118,6 +124,11 @@ juLog() {
 $out
 ]]>
     </system-out>
+    <system-err>
+<![CDATA[
+$errMsg
+]]>
+    </system-err>
     </testcase>
   "
   ## testsuite block
