@@ -22,7 +22,7 @@
 ###
 
 asserts=00; errors=0; total=0; content=""
-date=`which gdate || which date`
+date=`which gdate 2>/dev/null || which date`
 
 # create output folder
 juDIR=`pwd`/results
