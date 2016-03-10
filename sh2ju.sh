@@ -1,5 +1,5 @@
 #!/bin/sh
-### Copyright 2010 Manuel Carrasco Moñino. (manolo at apache.org) 
+### Copyright 2010 Manuel Carrasco Moñino. (manolo at apache.org)
 ###
 ### Licensed under the Apache License, Version 2.0.
 ### You may obtain a copy of it at
@@ -9,11 +9,12 @@
 ### A library for shell scripts which creates reports in jUnit format.
 ### These reports can be used in Jenkins, or any other CI.
 ###
-### Usage: 
+### Usage:
 ###     - Include this file in your shell script
 ###     - Use juLog to call your command any time you want to produce a new report
 ###        Usage:   juLog <options> command arguments
 ###           options:
+###             -class="MyClass" : a class name which will be shown in the junit report
 ###             -name="TestName" : the test name which will be shown in the junit report
 ###             -error="RegExp"  : a regexp which sets the test as failure when the output matches it
 ###             -ierror="RegExp" : same as -error but case insensitive
@@ -29,7 +30,7 @@ juDIR=`pwd`/results
 mkdir -p "$juDIR" || exit
 
 # The name of the suite is calculated based in your script name
-suite=`basename $0 | sed -e 's/.sh$//' | tr "." "_"`
+suite=""
 
 # A wrapper for the eval method witch allows catching seg-faults and use tee
 errfile=/tmp/evErr.$$.log
@@ -45,25 +46,39 @@ juLogClean() {
   rm -f "$juDIR"/TEST-*
 }
 
-# Execute a command and record its results 
+# Execute a command and record its results
 juLog() {
-  
+  suite="";
+  errfile=/tmp/evErr.$$.log
+  date=`which gdate || which date`
+  asserts=00; errors=0; total=0; content=""
+
   # parse arguments
   ya=""; icase=""
-  while [ -z "$ya" ]; do  
+  while [ -z "$ya" ]; do
     case "$1" in
-  	  -name=*)   name=$asserts-`echo "$1" | sed -e 's/-name=//'`;   shift;;
+  	  -name=*)   name=`echo "$1" | sed -e 's/-name=//'`;   shift;;
+  	  -class=*)  class=`echo "$1" | sed -e 's/-class=//'`;   shift;;
       -ierror=*) ereg=`echo "$1" | sed -e 's/-ierror=//'`; icase="-i"; shift;;
       -error=*)  ereg=`echo "$1" | sed -e 's/-error=//'`;  shift;;
       *)         ya=1;;
     esac
-  done  
+  done
 
-  # use first arg as name if it was not given 
+  # use first arg as name if it was not given
   if [ -z "$name" ]; then
-    name="$asserts-$1" 
+    name="$asserts-$1"
     shift
   fi
+
+  if [[ "$class" = "" ]]; then
+    class="default"
+  fi
+
+  echo "name is: $name"
+  echo "class is: $class"
+
+  suite=$class
 
   # calculate command to eval
   [ -z "$1" ] && return
@@ -79,7 +94,7 @@ juLog() {
   errf=/var/tmp/ju$$-err.txt
   >$outf
   echo ""                         | tee -a $outf
-  echo "+++ Running case: $name " | tee -a $outf
+  echo "+++ Running case: $class.$name " | tee -a $outf
   echo "+++ working dir: "`pwd`           | tee -a $outf
   echo "+++ command: $cmd"            | tee -a $outf
   ini=`$date +%s.%N`
@@ -105,7 +120,6 @@ juLog() {
   rm -f $errf
   # calculate vars
   asserts=`expr $asserts + 1`
-  asserts=`printf "%.2d" $asserts`
   errors=`expr $errors + $err`
   time=`echo "$end - $ini" | bc -l`
   total=`echo "$total + $time" | bc -l`
@@ -132,11 +146,24 @@ $errMsg
     </testcase>
   "
   ## testsuite block
-  cat <<EOF > "$juDIR/TEST-$suite.xml"
-  <testsuite failures="0" assertions="$assertions" name="$suite" tests="1" errors="$errors" time="$total">
-    $content
-  </testsuite>
+
+  if [[ -e "$juDIR/TEST-$suite.xml" ]]; then
+
+    # file exists. Need to append to it. If we remove the testsuite end tag, we can just add it in after.
+    sed -i "s^</testsuite>^^g" $juDIR/TEST-$suite.xml ## remove testSuite so we can add it later
+    cat <<EOF >> "$juDIR/TEST-$suite.xml"
+     $content
+    </testsuite>
 EOF
+
+  else
+    # no file exists. Adding a new file
+    cat <<EOF > "$juDIR/TEST-$suite.xml"
+    <testsuite failures="0" assertions="$assertions" name="$suite" tests="1" errors="$errors" time="$total">
+    $content
+    </testsuite>
+EOF
+  fi
 
 }
 
