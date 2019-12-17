@@ -27,7 +27,7 @@ date=`which gdate 2>/dev/null || which date`
 
 # create output folder
 juDIR=`pwd`/results
-mkdir -p "$juDIR" || exit
+test ! -e $juDIR && mkdir -p "$juDIR" || exit
 
 # The name of the suite is calculated based in your script name
 suite=""
